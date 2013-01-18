@@ -34,7 +34,7 @@
 
             behave.prepare(document.body);
 
-            //behave.bind(document.body, data);
+            behave.bind(document.body, data);
 
 
         });
@@ -46,20 +46,21 @@
     <div data-bind=person>
         <dl>
             <dt>Name</dt>
-            <dd data-prop=@name></dd>
+            <dd data-q=@name></dd>
             <dt>Age</dt>
-            <dd data-prop=@age></dd>
+            <dd data-q=@age></dd>
         </dl>
     </div>
 
-    <ul data-each=animals>
-        <li data-prop=@name></li>
-    </ul>
+    <!--<ul data-each=animals>-->
+        <!--<li data-prop=@name></li>-->
+    <!--</ul>-->
 
     <!-- it could be prepared to this -->
 
-    <ul data-each=animals>
-        <li data-prop=animals[].name></li>
+    <ul>
+        <li data-q=animals[0].name></li>
+        <li data-q=animals[1].name></li>
     </ul>
 
 

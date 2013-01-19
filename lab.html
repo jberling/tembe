@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+
     <title>Behave lab</title>
 
     <script>
@@ -19,9 +20,9 @@
     <script src="http://ajax.googleapis.com/ajax/libs/dojo/1.8.1/dojo/dojo.js"></script>
 
     <script>
-        require(["lab/behave", "dojo/domReady!"], function(behave){
+        require(["lab/behave", "lab/test/tests", "dojo/domReady!"], function(behave){
 
-            var data = {
+            window.data = {
                 person : {
                     name : "Stig Vig",
                     age  : 56
@@ -32,13 +33,21 @@
                 ]
             };
 
-            behave.prepare(document.body);
+            var bound = behave.bindNode(window.data);
 
-            behave.bind(document.body, data);
+            bound.prepare();
+
+            //bound.observe(document.body, window.data);
+
+            bound.bindData(window.data);
 
 
         });
     </script>
+
+    <style>
+
+    </style>
 
 </head>
 <body>
@@ -58,10 +67,10 @@
 
     <!-- it could be prepared to this -->
 
-    <ul>
-        <li data-q=animals[0].name></li>
-        <li data-q=animals[1].name></li>
-    </ul>
+    <!--<ul>-->
+        <!--<li data-q=animals[0].name></li>-->
+        <!--<li data-q=animals[1].name></li>-->
+    <!--</ul>-->
 
 
 </body>

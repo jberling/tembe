@@ -1,7 +1,58 @@
-/**
- * Created with JetBrains WebStorm.
- * User: johanjonasson
- * Date: 2013-01-19
- * Time: 09:59
- * To change this template use File | Settings | File Templates.
- */
+define([
+    "dojo/Deferred",
+    "dojo/dom-construct",
+    "lab/behave"
+], function(Deferred, domConstruct, behave) {
+
+    function showResult(res) {
+        if(document && document.body){
+            domConstruct.create("div", {
+                class:"result " + res,
+                innerHTML : res
+            }, document.body, "last")
+        } else {
+            console.log(res);
+        }
+    }
+
+    function runTests(tests) {
+        var test   = tests.shift(),
+            result;
+
+        if (!test) return;
+
+        result = test(new Deferred());
+
+        if (result.then){
+            result.then(function(res){
+                showResult(res);
+                runTests(tests);
+            });
+        } else {
+            showResult(result);
+            runTests(tests);
+        }
+    }
+
+    return {
+        register : function (tests) {
+
+            return {
+                run : function(){
+                    runTests(tests);
+                }
+            };
+        },
+
+        is : function(expected, actual){
+
+            if (expected === actual){
+                return "success";
+            } else {
+                throw expected + " is not equal to " + actual;
+            }
+
+        }
+    };
+
+});

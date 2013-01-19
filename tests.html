@@ -1,7 +1,43 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title></title>
+
+    <title>Behave lab</title>
+
+    <style>
+
+        .result {
+            padding: 5px;
+            margin: 10px 0;
+        }
+        .result.success{
+            background: rgb(150, 225, 150);
+        }
+        .result.pending{
+            background: rgb(225, 225, 150);
+        }
+
+    </style>
+
+    <script>
+        var dojoConfig = {
+            async: true,
+            // This code registers the correct location of the "demo"
+            // package so we can load Dojo from the CDN whilst still
+            // being able to load local modules
+            packages: [{
+                name: "lab",
+                location: location.pathname.replace(/\/[^/]*$/, '')
+            }]
+        };
+    </script>
+
+    <script src="http://ajax.googleapis.com/ajax/libs/dojo/1.8.1/dojo/dojo.js"></script>
+
+    <script>
+        require(["lab/test/tests"]);
+    </script>
+
 </head>
 <body>
 

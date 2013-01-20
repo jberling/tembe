@@ -13,6 +13,12 @@ define([
 
         "visible-if" : function(value, re){
             domStyle.set(re.observer, "display", value ? "block" : "none");
+        },
+
+        log : function(value){
+            console.log("log reaction");
+            console.log(value);
+            return value;
         }
 
     }
@@ -184,6 +190,7 @@ define([
                 function reaction (value) {
                     handleContextUpdate(value);
                     reactionChain(value);
+//                    handleContextUpdate(value);
                 }
 
                 createObservableProperty(propertyName, hostObject, reaction);
@@ -200,10 +207,9 @@ define([
                                 console.log(value + " -> " + step.value);
                                 return value;
                             case "REACTION":
-                                reactions[step.value](value, {
+                                return reactions[step.value](value, {
                                     observer : domNode
-                                })
-                                return "something";
+                                });
                             default:
                                 throw step.type + " is not implemented in reaction chain"
                         }

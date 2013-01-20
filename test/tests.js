@@ -131,6 +131,92 @@ define([
             return "success";
         },
 
+        // test update context binding with reaction
+        function (def) {
+
+            var frag = container('\
+                <div data-bind="person -> log()" data-context>\
+                    <span data-bind="@name -> render()"></span>\
+                </div>\
+            ');
+
+            return "pending";
+        },
+
+        // test update binding with a 3 link chain
+        function (def) {
+
+            var frag = container('\
+                <div data-bind="person -> do1() -> do2()" data-context>\
+                </div>\
+            ');
+
+            return "pending";
+        },
+
+        // test reaction to property binding
+        function (def) {
+
+            var frag = container('\
+                <div data-bind="foo -> do1() -> result">\
+                    <span data-bind="result -> render()"></span>\
+                </div>\
+            ');
+
+            return "pending";
+        },
+
+        // test parallell reactions
+        function (def) {
+
+            var frag = container('\
+                <div data-bind="foo -> { do1(); do2() }">\
+                    <span data-bind="result -> render()"></span>\
+                </div>\
+            ');
+
+            return "pending";
+        },
+
+        // test several observations
+        function (def) {
+
+            var frag = container('\
+                <div data-bind="\
+                    foo -> do-foo() -> foo-result; \
+                    bar -> do-bar() -> bar-result;">\
+                    <span data-bind="foo-result -> render()"></span>\
+                    <span data-bind="bar-result -> render()"></span>\
+                </div>\
+            ');
+
+            return "pending";
+        },
+
+        // test dom event observation
+        function (def) {
+
+            var frag = container('\
+                <button data-bind="!click -> result">Hit me</button>\
+                <span data-bind="result -> render()"></span>\
+            ');
+
+            return "pending";
+        },
+
+        // test dom event observation via delegate
+        function (def) {
+
+            var frag = container('\
+                <div data-bind="!button:click -> result">\
+                    <button>Hit me</button>\
+                    <span data-bind="result -> render()"></span>\
+                </div>\
+            ');
+
+            return "pending";
+        },
+
         // test reaction chain
         function (def) {
             return "pending";

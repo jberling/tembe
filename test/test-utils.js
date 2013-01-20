@@ -1,15 +1,16 @@
 define([
     "dojo/Deferred",
     "dojo/dom-construct",
-    "lab/behave"
-], function(Deferred, domConstruct, behave) {
+    "lab/behave",
+    "dojo/query"
+], function(Deferred, domConstruct, behave, query) {
 
     function showResult(res) {
         if(document && document.body){
             domConstruct.create("div", {
                 class:"result " + res,
                 innerHTML : res
-            }, document.body, "last")
+            }, query("#results")[0], "last")
         } else {
             console.log(res);
         }

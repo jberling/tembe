@@ -10,37 +10,15 @@ define([
 
     function container (innerHTML) {
 
-       return domConstruct.create("div",
-           { id:"container", innerHTML:innerHTML });
+       return domConstruct.create(
+           "div",
+           { class:"container", innerHTML:innerHTML },
+           query("#sandbox")[0]
+       );
 
     }
 
     t.register([
-
-//        // test prepare
-//        function (def) {
-//            var frag = container('\
-//                <div data-bind=uiState>\
-//                    <dl data-bind=person>\
-//                        <dt>Name</dt>\
-//                        <dd data-render=@name></dd>\
-//                    </dl>\
-//                    <div data-bind=@user>\
-//                        <div data-render=@name></div>\
-//                    </div>\
-//                </div>\
-//            ');
-//
-//            var bound = behave.bindDomNode(frag).prepare();
-//
-//            var qNodes = query("[data-q]", frag);
-//
-//            t.is("person.name", qNodes[0].dataset.q);
-//            t.is("uiState.user.name", qNodes[1].dataset.q);
-//
-//
-//            return "success";
-//        },
 
 
         // test _parseBindExpression
@@ -89,8 +67,6 @@ define([
                 </div>\
             ');
 
-            domConstruct.place(frag, document.body);
-
             var data = {
 
                 person : {
@@ -111,8 +87,6 @@ define([
 
             var spans = query("span", frag);
 
-            window.data = data;
-
             t.is("Boris", spans[0].innerHTML);
             t.is("blue", spans[1].innerHTML);
             t.is("Admin", spans[2].innerHTML);
@@ -120,12 +94,44 @@ define([
             return "success";
         },
 
-        // test observe
+        // test update context binding
         function (def) {
-            return "pending";
+
+            var frag = container('\
+                <div data-bind=person data-context>\
+                    <span data-bind="@name -> render()"></span>\
+                    <span data-bind="@age -> render()"></span>\
+                </div>\
+            ');
+
+            var data = {
+                person : {
+                    name : "Angus",
+                    age  : 45
+                }
+            };
+
+            window.data = data;
+
+            var bound = behave.bindDomNode(frag).bindData(data);
+
+            var spans = query("span", frag);
+
+            t.is("Angus", spans[0].innerHTML);
+            t.is("45", spans[1].innerHTML);
+
+            data.person = {
+                name : "Sixten",
+                age  : 73
+            };
+
+            t.is("Sixten", spans[0].innerHTML);
+            t.is("73", spans[1].innerHTML);
+
+            return "success";
         },
 
-        // test release
+        // test reaction chain
         function (def) {
             return "pending";
         }

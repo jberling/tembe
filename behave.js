@@ -47,7 +47,7 @@ define([
             var match, args = [], argsSource,
                 propertyRegex = /^@?[a-zA-Z0-9_\-\.]+$/,
                 reactionRegex = /^[a-zA-Z0-9_\-]+\([^\)]*\)$/,
-                eventRegex    = /^ / //todo
+                eventRegex    = /^![a-zA-Z0-9_\-]+ / //todo
             ;
 
             if(source.match(propertyRegex)){
@@ -58,7 +58,7 @@ define([
                 }
             } else if (source.match(reactionRegex)) {
 
-                argsSource = source.match(/\(([^\)]*)\)/)[1]
+                argsSource = source.match(/\(([^\)]*)\)/)[1];
 
                 if(argsSource){
                     args = argsSource.split(",").map(trim);
@@ -68,7 +68,7 @@ define([
                     type  : "REACTION",
                     value : source.match(/^[a-zA-Z0-9_\-]+/)[0],
                     args  : args
-                }
+                };
             }
         }
 
@@ -110,8 +110,8 @@ define([
                 return this[placeHolderName];
             },
             set : function(val){
-                callback(val);
                 this[placeHolderName] = val;
+                callback(val);
             }
         });
 
@@ -166,12 +166,31 @@ define([
                 }
             }
 
-            function createObservation (step, reaction) {
+            function createObservation (step, reactionChain) {
                 var propertyName = step.value.replace(/^@/, ""),
                     hostObject   = getHostObject(step.value, data)
                 ;
 
+                function handleContextUpdate (value){
+                    if(domAttr.has(domNode, "data-context")){
+                        var bindNodes = query("[data-bind]", domNode);
+                        if (domAttr.has(domNode, "data-bind")){
+                            bindNodes.unshift(domNode);
+                        }
+                        console.log("bindNodes", bindNodes);
+                        console.log("name", data.person.name);
+                        console.log("age", data.person.age);
+                        bindNodes.forEach(handleBindings);
+                    }
+                }
+
+                function reaction (value) {
+                    handleContextUpdate(value);
+                    reactionChain(value);
+                }
+
                 createObservableProperty(propertyName, hostObject, reaction);
+
                 return queryObject(hostObject, propertyName);
             }
 

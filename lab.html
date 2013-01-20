@@ -20,24 +20,20 @@
     <script src="http://ajax.googleapis.com/ajax/libs/dojo/1.8.1/dojo/dojo.js"></script>
 
     <script>
-        require(["lab/behave", "lab/test/tests", "dojo/domReady!"], function(behave){
+        require(["lab/behave"], function(behave){
 
             window.data = {
-                person : {
-                    name : "Stig Vig",
-                    age  : 56
+                menu : {
+                    show : true,
+                    link : "about"
                 },
-                animals : [
-                    { name: "lion" },
-                    { name: "zebra" }
-                ]
+                page : {
+                    title : "My Test Page",
+                    text  : "<p>This is a test page</p>"
+                }
             };
 
-            var bound = behave.bindNode(window.data);
-
-            bound.prepare();
-
-            //bound.observe(document.body, window.data);
+            var bound = behave.bindDomNode(document.body);
 
             bound.bindData(window.data);
 
@@ -50,28 +46,39 @@
     </style>
 
 </head>
-<body>
+<body data-future-bind="
+        !button[type=submit].click -> do-submit();
+        !button[type=button].click -> {
+            do-action() -> map() -> result;
+            other-action();
+        },
+    ">
 
-    <div data-bind=person>
-        <dl>
-            <dt>Name</dt>
-            <dd data-q=@name></dd>
-            <dt>Age</dt>
-            <dd data-q=@age></dd>
-        </dl>
+    <div id=page>
+
+        <header data-context="menu">
+
+            <nav data-bind="@show -> visible-if()">
+                <a data-bind="@link -> render()"></a>
+            </nav>
+
+        </header>
+
+        <div id=main>
+
+            <article data-bind=page data-context>
+
+                <h1 data-bind="@title -> render()"></h1>
+
+                <div data-bind="@text -> render()">
+
+                </div>
+
+            </article>
+
+        </div>
+
     </div>
-
-    <!--<ul data-each=animals>-->
-        <!--<li data-prop=@name></li>-->
-    <!--</ul>-->
-
-    <!-- it could be prepared to this -->
-
-    <!--<ul>-->
-        <!--<li data-q=animals[0].name></li>-->
-        <!--<li data-q=animals[1].name></li>-->
-    <!--</ul>-->
-
 
 </body>
 </html>

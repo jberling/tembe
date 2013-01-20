@@ -1,4 +1,93 @@
-define(["dojo/query", "dojo/dom-attr", "dojo/NodeList-traverse"], function(query, domAttr){
+define([
+    "dojo/query",
+    "dojo/dom-attr",
+    "dojo/dom-style",
+    "dojo/NodeList-traverse"
+], function(query, domAttr, domStyle){
+
+    var reactions = {
+
+        render : function(value, re){
+            re.observer.innerHTML = value;
+        },
+
+        "visible-if" : function(value, re){
+            domStyle.set(re.observer, "display", value ? "block" : "none");
+        }
+
+    }
+
+    function parseBindExpression(expr){
+
+        var statements;
+
+        function trim (str){ return str.trim() }
+        function removeEmptyStr (str) { return str; }
+
+        statements = expr.split(";").map(trim).filter(removeEmptyStr);
+
+        function tryRegex (regex, func) {
+            var match = source.match(regex),
+                step  ={ args:[] };
+
+            //continue
+            if (match) {
+                match  = match[0];
+                source = source.slice(match.length);
+
+                func(match, step);
+
+                return step;
+            } else {
+                return false;
+            }
+        }
+
+        function parseStep (source) {
+            var match, args = [], argsSource,
+                propertyRegex = /^@?[a-zA-Z0-9_\-\.]+$/,
+                reactionRegex = /^[a-zA-Z0-9_\-]+\([^\)]*\)$/,
+                eventRegex    = /^ / //todo
+            ;
+
+            if(source.match(propertyRegex)){
+                return {
+                    type  : "PROPERTY",
+                    value : source,
+                    args  : args
+                }
+            } else if (source.match(reactionRegex)) {
+
+                argsSource = source.match(/\(([^\)]*)\)/)[1]
+
+                if(argsSource){
+                    args = argsSource.split(",").map(trim);
+                }
+
+                return {
+                    type  : "REACTION",
+                    value : source.match(/^[a-zA-Z0-9_\-]+/)[0],
+                    args  : args
+                }
+            }
+        }
+
+        function parseStatement (source) {
+
+            var steps     = source.split("->").map(trim).filter(removeEmptyStr),
+                statement = {
+                    steps : steps.map(parseStep)
+                };
+
+            return statement;
+        }
+
+        statements = statements.map(parseStatement);
+
+        return {
+            statements:statements
+        };
+    }
 
     function queryObject (obj, q) {
         return q.replace(/\[/g, ".[")
@@ -18,11 +107,9 @@ define(["dojo/query", "dojo/dom-attr", "dojo/NodeList-traverse"], function(query
 
         Object.defineProperty(obj, propertyName, {
             get : function(){
-                console.log("ping get")
                 return this[placeHolderName];
             },
             set : function(val){
-                console.log("ping set")
                 callback(val);
                 this[placeHolderName] = val;
             }
@@ -46,64 +133,79 @@ define(["dojo/query", "dojo/dom-attr", "dojo/NodeList-traverse"], function(query
 
         function handleBindings(domNode){
 
-            var propertyPath, bindAttrValue = domAttr.get(domNode, "data-bind"),
-                q            , //= context.split("."),
-                propertyName , //= q.pop(),
-                hostObject    //= q.length ? queryObject(data, q.join(".")) : data
-            ;
+            var bindings = parseBindExpression(
+                domAttr.get(domNode, "data-bind") );
 
-            function getPropertyPath (str) {
-                var needParent   = str.match(/^@/),
-                    propertyName = str.replace(/^@/, ""),
-                    pathParts,
-                    path         = propertyName,
-                    parents;
+            function getHostObjectChain () {
+                var parents = query(domNode).parents("[data-context]").map(function(domNode){
+                        var value = domAttr.get(domNode, "data-context");
+                        return value || domAttr.get(domNode, "data-bind");
+                    }),
+                    chain   = [];
 
+                var parent;
+                while (parents.length){
+                    parent = parents.shift();
+                    if (parent.match(/^@/)){
+                        chain.push(parent.slice(1));
+                    } else {
+                        chain.push(parent);
+                        break;
+                    }
+                }
+
+                return chain.reverse().join(".");
+            }
+
+            function getHostObject (propertyName, hostObject){
+                var needParent = propertyName.match(/^@/);
                 if(needParent){
-                    parents   = query(domNode).parents("[data-bind]"),
-                    pathParts = parents.map(function(domNode){
-                        return domAttr.get(domNode, "data-bind");
-                    });
+                    return queryObject(hostObject, getHostObjectChain())
+                } else {
+                    return hostObject;
+                }
+            }
 
-                    function buildPath (parts) {
-                        var partName = parts.shift();
+            function createObservation (step, reaction) {
+                var propertyName = step.value.replace(/^@/, ""),
+                    hostObject   = getHostObject(step.value, data)
+                ;
 
-                        if(partName){
-                            needParent = partName.match(/^@/);
-                            partName   = partName.replace(/^@/, "");
-                            path       = partName + "." + path;
-                        }
+                createObservableProperty(propertyName, hostObject, reaction);
+                return queryObject(hostObject, propertyName);
+            }
 
-                        if(needParent){
-                            buildPath(parts);
+            function createReactionChain (steps) {
+                return function (value) {
+
+                    function func (value, step){
+                        switch(step.type){
+                            case "PROPERTY":
+                                console.log(value + " -> " + step.value);
+                                return value;
+                            case "REACTION":
+                                reactions[step.value](value, {
+                                    observer : domNode
+                                })
+                                return "something";
+                            default:
+                                throw step.type + " is not implemented in reaction chain"
                         }
                     }
 
-                    buildPath(pathParts);
-                }
-
-                return path;
+                    steps.reduce(func, value);
+                };
             }
 
-            function getHostObject(){
-
+            function handleStatement (statement) {
+                var firstStep     = statement.steps[0],
+                    reactionChain = createReactionChain(statement.steps.slice(1)),
+                    initialValue  = createObservation(firstStep, reactionChain)
+                ;
+                reactionChain(initialValue);
             }
 
-            function react (val) {
-//                console.log("Ping, the value was " + val);
-//                console.log("the node", domNode);
-                var reaction = domAttr.get(domNode, "data-react");
-                if(reaction === "render"){
-                    domNode.innerHTML = val;
-                }
-            }
-
-            propertyPath = getPropertyPath(bindAttrValue);
-            q            = propertyPath.split(".");
-            propertyName = q.pop();
-            hostObject   = q.length ? queryObject(data, q.join(".")) : data;
-
-            createObservableProperty(propertyName, hostObject, react);
+            bindings.statements.forEach(handleStatement);
 
         }
 
@@ -111,39 +213,9 @@ define(["dojo/query", "dojo/dom-attr", "dojo/NodeList-traverse"], function(query
 
     };
 
-//    DomNodeConnection.prototype.prepare = function(){
-//
-//        var bindNodes = query("[data-bind]", this.domNode);
-//
-//        if (domAttr.has(this.domNode, "data-bind")){
-//            bindNodes.unshift(this.domNode);
-//        }
-//
-//        function setQ (context){
-//            return function(domNode){
-//                var value    = domAttr.get(domNode, "data-q"),
-//                    newValue = value.replace(/^@/, context + ".");
-//
-//                domAttr.set(domNode, "data-q", newValue);
-//            }
-//        }
-//
-//        function handleBindContext(domNode){
-//            var context = domAttr.get(domNode, "data-bind");
-//
-//            query("[data-q]", domNode).forEach(
-//                setQ(context)
-//            );
-//        }
-//
-//        bindNodes.forEach(handleBindContext);
-//
-//
-//    }
-
-
-
     return {
+
+        _parseBindExpression : parseBindExpression,
 
         bindDomNode : function(domNode){
 
@@ -153,168 +225,5 @@ define(["dojo/query", "dojo/dom-attr", "dojo/NodeList-traverse"], function(query
 
 
     };
-
-
-
-//    var queryObject = function(obj, q){
-//        return q.replace(/\[/g, ".[")
-//            .split(".")
-//            .reduce(function(val, key){
-//                if(key.match(/^\[/)) {
-//                    key = key.slice(1, key.length-1)
-//                }
-//                return val[key];
-//            }, obj);
-//    };
-//
-//    var prepare = function(domNode){
-//
-//        var bindNodes = query("[data-bind]", domNode);
-//
-//        if(domAttr.has(domNode, "data-bind")){
-//            bindNodes.unshift(domNode);
-//        }
-//
-//        bindNodes.forEach(function(node){
-//
-//            var context = domAttr.get(node, "data-bind");
-//
-//
-//
-//            query("[data-q]", node).forEach(function(node){
-//
-//                var value    = domAttr.get(node, "data-q"),
-//                    newValue = value.replace(/^@/, context + ".");
-//
-//                domAttr.set(node, "data-q", newValue);
-//
-//            });
-//
-////            query("[data-each]", node).forEach(function(node){
-////
-////                var value    = domAttr.get(node, "data-each"),
-////                    newValue = value.replace(/^@/, context + ".");
-////
-////                query("[data-q]", node).forEach(function(node){
-////                    domAttr.set(node, "data-context", newValue);
-////                });
-////
-////                domAttr.set(node, "data-each", newValue);
-////
-////            });
-//
-//        });
-//
-//    };
-//
-//    var makeObservable = function(propertyName, obj, callback){
-//
-//        var original        = obj[propertyName],
-//            placeHolderName = "$observed$_" + propertyName;
-//
-//        Object.defineProperty(obj, propertyName, {
-//            get : function(){
-//                console.log("ping get")
-//                return this[placeHolderName];
-//            },
-//            set : function(val){
-//                console.log("ping set")
-//                callback(val);
-//                this[placeHolderName] = val;
-//            }
-//        });
-//
-//        obj[placeHolderName] = original;
-//
-//    };
-//
-//    var observe = function(domNode, data){
-//        /*
-//        var bindNodes = query("[data-bind]", domNode);
-//
-//        if(domAttr.has(domNode, "data-bind")){
-//            bindNodes.unshift(domNode);
-//        }
-//
-//        bindNodes.forEach(function(node){
-//
-//            var context      = domAttr.get(node, "data-bind"),
-//                q            = context.split("."),
-//                propertyName = q.pop(),
-//                hostObject   = q.length ? queryObject(data, q.join(".")) : data
-//                ;
-//
-//            makeObservable(propertyName, hostObject);
-//
-//        });
-//        */
-//
-//        var qNodes = query("[data-q]", domNode);
-//
-//        if(domAttr.has(domNode, "data-q")){
-//            qNodes.unshift(domNode);
-//        }
-//
-//        qNodes.forEach(function(node){
-//
-//            var context      = domAttr.get(node, "data-q"),
-//                q            = context.split("."),
-//                propertyName = q.pop(),
-//                hostObject   = q.length ? queryObject(data, q.join(".")) : data
-//                ;
-//
-//            makeObservable(propertyName, hostObject, function(newVal){
-//                node.innerHTML = newVal;
-//            });
-//
-//        });
-//
-//    };
-//
-//    var bind = function(domNode, data){
-//
-//        var qNodes = query("[data-q]", domNode);
-//
-//        if(domAttr.has(domNode, "data-q")){
-//            qNodes.unshift(domNode);
-//        }
-//
-//        qNodes.forEach(function(node){
-//
-//            var q     = domAttr.get(node, "data-q"),
-//                value = queryObject(data, q)
-//            ;
-//
-//            node.innerHTML = value;
-//
-//        });
-//
-////        var eachNodes = query("[data-each]", domNode);
-////
-////        if(domAttr.has(domNode, "data-each")){
-////            eachNodes.unshift(domNode);
-////        }
-////
-////        eachNodes.forEach(function(node){
-////
-////            var q = domAttr.get(node, "data-each");
-////
-////            prepare(node);
-////
-////            bind(node, queryObject(data, q));
-////
-////        });
-//    };
-//
-//    var release = function(data){
-//
-//    };
-//
-//    return {
-//        prepare         : prepare,
-//        bind            : bind,
-//        observe         : observe,
-//        release         : release
-//    };
 
 });

@@ -42,19 +42,49 @@ define([
 //            return "success";
 //        },
 
+
+        // test _parseBindExpression
+        function () {
+
+            var result = behave._parseBindExpression("\
+                    @foo -> do-foo(humle, dumle); \
+                    \
+                "),
+                statement = result.statements[0],
+                step      = statement.steps[0]
+            ;
+
+
+
+            t.is("@foo", step.value);
+            t.is("PROPERTY", step.type);
+            t.is(0, step.args.length);
+
+            step = statement.steps[1];
+            t.is("do-foo", step.value);
+            t.is("REACTION", step.type);
+            t.is("humle", step.args[0]);
+
+            return "success";
+        },
+
         // test bind
-        function (def) {
+        function () {
 
             var frag = container('\
-                <div data-bind=uiState>\
-                    <dl data-bind=person>\
+                <div data-context=uiState>\
+                    <dl data-bind=person data-context>\
                         <dt>Name</dt>\
                         <dd>\
-                            <span data-bind=@name data-react=render></span>\
+                            <span data-bind="@name -> render()"></span>\
+                        </dd>\
+                        <dt>Eyes</dt>\
+                        <dd>\
+                            <span data-bind="@face.eyes -> render()"></span>\
                         </dd>\
                     </dl>\
-                    <div data-bind=@user>\
-                        <div data-bind=@name data-react=render></div>\
+                    <div data-context=@user>\
+                        <span data-bind="@name -> render()"></span>\
                     </div>\
                 </div>\
             ');
@@ -64,7 +94,10 @@ define([
             var data = {
 
                 person : {
-                    name : "Boris"
+                    name : "Boris",
+                    face : {
+                        eyes : "blue"
+                    }
                 },
 
                 uiState : {
@@ -76,14 +109,13 @@ define([
 
             var bound = behave.bindDomNode(frag).bindData(data);
 
-            var qNodes = query("[data-render]", frag);
+            var spans = query("span", frag);
 
-            window.data =  data;
+            window.data = data;
 
-            console.log(frag);
-
-//            t.is("person.name", qNodes[0].dataset.render);
-//            t.is("uiState.user.name", qNodes[1].dataset.render);
+            t.is("Boris", spans[0].innerHTML);
+            t.is("blue", spans[1].innerHTML);
+            t.is("Admin", spans[2].innerHTML);
 
             return "success";
         },

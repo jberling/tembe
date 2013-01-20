@@ -177,9 +177,6 @@ define([
                         if (domAttr.has(domNode, "data-bind")){
                             bindNodes.unshift(domNode);
                         }
-                        console.log("bindNodes", bindNodes);
-                        console.log("name", data.person.name);
-                        console.log("age", data.person.age);
                         bindNodes.forEach(handleBindings);
                     }
                 }

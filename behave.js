@@ -2,8 +2,9 @@ define([
     "dojo/query",
     "dojo/dom-attr",
     "dojo/dom-style",
+    "dojo/_base/lang",
     "dojo/NodeList-traverse"
-], function(query, domAttr, domStyle){
+], function(query, domAttr, domStyle, lang){
 
     var reactions = {
 
@@ -125,11 +126,15 @@ define([
 
     }
 
-    function DomNodeConnection (domNode) {
+    function DomNodeConnection (domNode, moreReactions) {
         this.domNode = domNode;
+        this.reactions = lang.mixin({}, reactions);
+        this.reactions = lang.mixin(this.reactions, moreReactions);
     }
 
     DomNodeConnection.prototype.bindData = function(data){
+
+        var self = this;
 
         var bindNodes = query("[data-bind]", this.domNode);
 
@@ -189,25 +194,28 @@ define([
 
                 function reaction (value) {
                     handleContextUpdate(value);
-                    reactionChain(value);
+                    reactionChain(value, hostObject);
 //                    handleContextUpdate(value);
                 }
 
                 createObservableProperty(propertyName, hostObject, reaction);
 
-                return queryObject(hostObject, propertyName);
+                return [ queryObject(hostObject, propertyName), hostObject ];
             }
 
             function createReactionChain (steps) {
-                return function (value) {
+                return function (value, hostObject) {
 
                     function func (value, step){
                         switch(step.type){
                             case "PROPERTY":
-                                console.log(value + " -> " + step.value);
+                                var propertyName = step.value.split(".").pop();
+                                console.log("propertyName", propertyName);
+                                console.log("hostObject", hostObject);
+                                hostObject[propertyName] = value;
                                 return value;
                             case "REACTION":
-                                return reactions[step.value](value, {
+                                return self.reactions[step.value](value, {
                                     observer : domNode
                                 });
                             default:
@@ -221,10 +229,11 @@ define([
 
             function handleStatement (statement) {
                 var firstStep     = statement.steps[0],
-                    reactionChain = createReactionChain(statement.steps.slice(1)),
-                    initialValue  = createObservation(firstStep, reactionChain)
+                    reactionChain = createReactionChain(statement.steps.slice(1))
                 ;
-                reactionChain(initialValue);
+                
+                reactionChain.apply(null,
+                    createObservation(firstStep, reactionChain) );
             }
 
             bindings.statements.forEach(handleStatement);
@@ -239,9 +248,9 @@ define([
 
         _parseBindExpression : parseBindExpression,
 
-        bindDomNode : function(domNode){
+        bindDomNode : function(domNode, reactions){
 
-            return new DomNodeConnection(domNode);
+            return new DomNodeConnection(domNode, reactions);
 
         }
 

@@ -151,7 +151,32 @@ define([
                 </div>\
             ');
 
-            return "pending";
+            var data = {
+
+                person : {
+                    name : "Stephen"
+                }
+            };
+
+            var reactions = {
+                
+                do1 : function(value){
+                    return value;    
+                },
+                
+                do2 : function(value){
+                    if(value.name === "Oscar"){
+                        def.resolve("success");
+                    }
+                }
+                
+            }
+
+            behave.bindDomNode(frag, reactions).bindData(data);
+
+            data.person = { name:"Oscar" }
+
+            return def;
         },
 
         // test reaction to property binding
@@ -159,11 +184,33 @@ define([
 
             var frag = container('\
                 <div data-bind="foo -> do1() -> result">\
-                    <span data-bind="result -> render()"></span>\
                 </div>\
+                <span data-bind="result -> assert()"></span>\
             ');
 
-            return "pending";
+            var data = {
+                foo : "not ready"
+            };
+
+            var reactions = {
+                
+                do1 : function(value){
+                    console.log("do1", value)
+                    return value;    
+                },
+                
+                assert : function(value){
+                    if(value === "ready"){
+                        def.resolve("success");
+                    }
+                }
+                
+            }
+
+            behave.bindDomNode(frag, reactions).bindData(data);
+
+            data.foo = "ready"
+            return def;
         },
 
         // test parallell reactions

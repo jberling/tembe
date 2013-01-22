@@ -6,6 +6,41 @@ define([
     "dojo/NodeList-traverse"
 ], function(query, domAttr, domStyle, lang){
 
+    /*
+        -= BEHAVIORS =-
+    
+        -= observations =-
+    
+        An observation: 
+            foo-property; 
+        
+        An observation with a behavior: 
+            foo-property -> do-foo();
+        
+        An observation with a behavior chain: 
+            foo-property -> do-foo() -> do-bar();
+        
+        An observation with several behaviors:
+            foo-property { 
+                do-humle(); 
+                do-dumle() -> wait(500) -> dumle-result; 
+            }
+            
+        An event observation and a property change observation, using delegates.
+            button[type=button]!click -> trigger-something() -> trigger-result;
+            .result-pane <: trigger-result -> render(); 
+            
+        
+        
+        -= timers =-
+        
+        timeout(5000) -> trigger() -> visible-tip;
+        
+        interval(1000) -> add-message(`next-message`) -> message-stack;
+    
+    */
+
+
     var reactions = {
 
         render : function(value, re){

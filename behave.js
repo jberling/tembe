@@ -28,7 +28,11 @@ define([
             
         An event observation and a property change observation, using delegates.
             button[type=button]!click -> trigger-something() -> trigger-result;
-            .result-pane <: trigger-result -> render(); 
+            .result-pane { trigger-result -> render(); }
+            .result-pane {  
+                button[type=button]!click -> trigger-something() -> trigger-result;
+                trigger-result -> render();
+            }
             
         
         

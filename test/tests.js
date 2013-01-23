@@ -21,7 +21,7 @@ define([
     t.register([
 
 
-        // test _parseBindExpression
+        // 1. test _parseBindExpression
         function () {
 
             var result = behave._parseBindExpression("\
@@ -46,7 +46,7 @@ define([
             return "success";
         },
 
-        // test bind
+        // 2. test bind
         function () {
 
             var frag = container('\
@@ -94,7 +94,7 @@ define([
             return "success";
         },
 
-        // test update context binding
+        // 3. test update context binding
         function (def) {
 
             var frag = container('\
@@ -131,7 +131,7 @@ define([
             return "success";
         },
 
-        // test update context binding with reaction
+        // 4. test update context binding with reaction
         function (def) {
 
             var frag = container('\
@@ -143,7 +143,7 @@ define([
             return "pending";
         },
 
-        // test update binding with a 3 link chain
+        // 5. test update binding with a 3 link chain
         function (def) {
 
             var frag = container('\
@@ -179,7 +179,7 @@ define([
             return def;
         },
 
-        // test reaction to property binding
+        // 6. test reaction to property binding
         function (def) {
 
             var frag = container('\
@@ -213,7 +213,7 @@ define([
             return def;
         },
 
-        // test parallell reactions
+        // 7. test parallell reactions
         function (def) {
 
             var frag = container('\
@@ -225,7 +225,7 @@ define([
             return "pending";
         },
 
-        // test several observations
+        // 8. test several observations
         function (def) {
 
             var frag = container('\
@@ -240,7 +240,7 @@ define([
             return "pending";
         },
 
-        // test dom event observation
+        // 9. test dom event observation
         function (def) {
 
             var frag = container('\
@@ -251,7 +251,7 @@ define([
             return "pending";
         },
 
-        // test dom event observation via delegate
+        // 10. test dom event observation via delegate
         function (def) {
 
             var frag = container('\
@@ -264,7 +264,7 @@ define([
             return "pending";
         },
 
-        // test reaction chain
+        // 11. test reaction chain
         function (def) {
             return "pending";
         }

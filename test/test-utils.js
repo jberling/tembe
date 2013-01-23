@@ -5,11 +5,19 @@ define([
     "dojo/query"
 ], function(Deferred, domConstruct, behave, query) {
 
+    var incrementer = function(){
+        var i = 0;
+        return function(){
+            i++;
+            return i;
+        }
+    }();
+
     function showResult(res) {
         if(document && document.body){
             domConstruct.create("div", {
                 class:"result " + res,
-                innerHTML : res
+                innerHTML : incrementer() + ". " + res
             }, query("#results")[0], "last")
         } else {
             console.log(res);
